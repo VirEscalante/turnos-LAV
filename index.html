@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Turnos - Limpieza Alto Valle</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    #calendar {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    form {
+      max-width: 600px;
+      margin: 30px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      display: none;
+      flex-direction: column;
+    }
+    label {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    textarea::placeholder {
+      color: #999;
+      font-style: italic;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #0077b6;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #023e8a;
+    }
+    a#botonPago button {
+      background-color: #38b000;
+    }
+    a#botonPago button:hover {
+      background-color: #2d6a4f;
+    }
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      background-color: #f1f1f1;
+      border-radius: 8px;
+      padding: 10px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .checkbox-item:hover {
+      background-color: #e0e0e0;
+    }
+    .checkbox-item input {
+      margin-right: 10px;
+      width: 18px;
+      height: 18px;
+    }
+    #otroServicioContainer {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Reservar Turno</h1>
+  <div id="calendar"></div>
+
+  <form id="reservaForm">
+    <h2>Datos del Cliente</h2>
+    <input type="hidden" id="fechaSeleccionada" name="fecha" required>
+
+    <label>Nombre y Apellido:</label>
+    <input type="text" name="nombre" required>
+
+    <label>Teléfono:</label>
+    <input type="text" name="telefono" required>
+
+    <label>Dirección:</label>
+    <input type="text" name="direccion" required>
+
+    <label>Ciudad:</label>
+    <select name="ciudad" required>
+      <option value="">-- Seleccione --</option>
+      <option>Cipolletti</option>
+      <option>Fernández Oro</option>
+      <option>Allen</option>
+      <option>General Roca</option>
+      <option>Cervantes</option>
+      <option>Mainqué</option>
+      <option>Ingeniero Luis A. Huergo</option>
+      <option>General Enrique Godoy</option>
+      <option>Villa Regina</option>
+    </select>
+
+    <label>Servicios a realizar (puede seleccionar más de uno):</label>
+    <div class="checkbox-group">
+      <label class="checkbox-item"><input type="checkbox" name="servicios" value="Silla"> Silla</label>
+      <label class="checkbox-item"><input type="checkbox" name="servicios" value="Sillón"> Sillón</label>
+      <label class="checkbox-item"><input type="checkbox" name="servicios" value="Alfombra"> Alfombra</label>
+      <label class="checkbox-item"><input type="checkbox" name="servicios" value="Colchón"> Colchón</label>
+      <label class="checkbox-item"><input type="checkbox" name="servicios" value="Base sommier"> Base sommier</label>
+      <label class="checkbox-item"><input type="checkbox" name="servicios" value="Respaldar"> Respaldar</label>
+      <label class="checkbox-item"><input type="checkbox" name="servicios" value="Auto"> Auto</label>
+      <label class="checkbox-item"><input type="checkbox" name="servicios" value="Camioneta"> Camioneta</label>
+      <label class="checkbox-item"><input type="checkbox" name="servicios" value="Utilitario"> Utilitario</label>
+      <label class="checkbox-item"><input type="checkbox" id="otroCheckbox" name="servicios" value="Otro"> Otro</label>
+    </div>
+
+    <div id="otroServicioContainer">
+      <label>Especifique otro servicio si corresponde:</label>
+      <input type="text" name="otroServicio" id="otroServicio">
+    </div>
+
+    <label>Detalle del servicio:</label>
+    <textarea name="detalle" rows="3" id="detalleServicio" placeholder="Ej. Colchón 2 plazas, 6 sillas"></textarea>
+
+    <button type="submit">Enviar datos por WhatsApp</button>
+  </form>
+
+  <div id="pagoSeña" style="display:none; text-align:center; margin-top:20px;">
+    <p><strong>Para confirmar tu turno, deberás abonar una seña de $20.000.</strong></p>
+    <a href="https://mpago.la/2q3XtY9" target="_blank" id="botonPago">
+      <button type="button">Pagar Seña ($20.000)</button>
+    </a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const calendarEl = document.getElementById('calendar');
+      const form = document.getElementById('reservaForm');
+      const fechaInput = document.getElementById('fechaSeleccionada');
+      const pagoDiv = document.getElementById('pagoSeña');
+      const otroCheckbox = document.getElementById('otroCheckbox');
+      const otroServicioInput = document.getElementById('otroServicio');
+      const otroServicioContainer = document.getElementById('otroServicioContainer');
+
+      otroCheckbox.addEventListener('change', () => {
+        if (otroCheckbox.checked) {
+          otroServicioContainer.style.display = 'block';
+          document.getElementById('detalleServicio').required = true;
+        } else {
+          otroServicioInput.value = '';
+          otroServicioContainer.style.display = 'none';
+          document.getElementById('detalleServicio').required = false;
+        }
+      });
+
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'es',
+        selectable: true,
+        validRange: function(nowDate) {
+          let endDate = new Date(nowDate.getFullYear(), nowDate.getMonth() + 2, 0);
+          return {
+            start: nowDate,
+            end: endDate
+          };
+        },
+        events: {
+          googleCalendarApiKey: 'AIzaSyDQVz9Q1OxF12kjtW04UNigTLd9YEd4Jy8',
+          googleCalendarId: '84ead65e555e180b177d45c8dc49cc893cdb6e0d5806d770ec849fabb31585bb@group.calendar.google.com'
+        },
+        select: function(info) {
+          const fecha = info.startStr;
+          fechaInput.value = fecha;
+          form.style.display = 'flex';
+          window.scrollTo({ top: form.offsetTop, behavior: 'smooth' });
+        }
+      });
+
+      calendar.render();
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const datos = new FormData(form);
+        const serviciosSeleccionados = Array.from(form.querySelectorAll('input[name="servicios"]:checked')).map(cb => cb.value).join(', ');
+
+        const mensaje = `Hola! Quiero reservar un turno el ${datos.get('fecha')}
+` +
+                        `Nombre: ${datos.get('nombre')}
+` +
+                        `Teléfono: ${datos.get('telefono')}
+` +
+                        `Dirección: ${datos.get('direccion')}
+` +
+                        `Ciudad: ${datos.get('ciudad')}
+` +
+                        `Servicios: ${serviciosSeleccionados}
+` +
+                        `Otro servicio: ${datos.get('otroServicio') || 'N/A'}
+` +
+                        `Detalle: ${datos.get('detalle') || 'N/A'}`;
+
+        const url = `https://wa.me/5492984655610?text=${encodeURIComponent(mensaje)}`;
+        window.open(url, '_blank');
+
+        setTimeout(() => {
+          pagoDiv.style.display = 'block';
+          window.scrollTo({ top: pagoDiv.offsetTop, behavior: 'smooth' });
+        }, 1000);
+      });
+    });
+  </script>
+</body>
+</html>
+
