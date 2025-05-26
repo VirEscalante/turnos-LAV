@@ -88,7 +88,7 @@
   </style>
 </head>
 <body>
-  <h1>Reservar Turno - Limpieza Alto Valle </h1>
+  <h1>Reservar Turno</h1>
   <div id="calendar"></div>
 
   <form id="reservaForm">
@@ -185,7 +185,13 @@
       });
 
       const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
+  initialView: 'dayGridMonth',
+  locale: 'es',
+  selectable: true,
+  selectMirror: true,
+  unselectAuto: false,
+  selectLongPressDelay: 0,
+
         locale: 'es',
         selectable: true,
         validRange: function(nowDate) {
@@ -193,31 +199,6 @@
           return { start: nowDate, end: endDate };
         },
         events: function(info, successCallback, failureCallback) {
-          const calendarId = '84ead65e555e180b177d45c8dc49cc893cdb6e0d5806d770ec849fabb31585bb@group.calendar.google.com';
-          const apiKey = 'AIzaSyDQVz9Q1OxF12kjtW04UNigTLd9YEd4Jy8';
-          const timeMin = new Date(info.start).toISOString();
-          const timeMax = new Date(info.end).toISOString();
-          const url = `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?key=${apiKey}&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`;
-
-          fetch(url)
-            .then(response => response.json())
-            .then(data => {
-              if (!data.items) {
-                console.error('Respuesta inesperada de la API:', data);
-                return failureCallback();
-              }
-              const eventosDisponibles = data.items
-                .filter(event => event.summary && event.summary.toLowerCase().includes('disponible'))
-                .map(event => ({
-                  title: event.summary,
-                  start: event.start.date || event.start.dateTime
-                }));
-              successCallback(eventosDisponibles);
-            })
-            .catch(error => {
-              console.error('Error al obtener eventos:', error);
-              failureCallback(error);
-            });
           fetch(`https://www.googleapis.com/calendar/v3/calendars/84ead65e555e180b177d45c8dc49cc893cdb6e0d5806d770ec849fabb31585bb@group.calendar.google.com/events?key=AIzaSyDQVz9Q1OxF12kjtW04UNigTLd9YEd4Jy8&timeMin=${info.startStr}T00:00:00Z&timeMax=${info.endStr}T23:59:59Z&singleEvents=true&orderBy=startTime`)
             .then(response => response.json())
             .then(data => {
