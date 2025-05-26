@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Turnos - Limpieza Alto Valle</title>
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet" />
-
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -194,7 +193,11 @@
           return { start: nowDate, end: endDate };
         },
         events: function(info, successCallback, failureCallback) {
-          fetch(`https://www.googleapis.com/calendar/v3/calendars/84ead65e555e180b177d45c8dc49cc893cdb6e0d5806d770ec849fabb31585bb@group.calendar.google.com/events?key=AIzaSyDQVz9Q1OxF12kjtW04UNigTLd9YEd4Jy8&timeMin=${info.startStr}T00:00:00Z&timeMax=${info.endStr}T23:59:59Z&singleEvents=true&orderBy=startTime`)
+          const calendarId = '84ead65e555e180b177d45c8dc49cc893cdb6e0d5806d770ec849fabb31585bb@group.calendar.google.com';
+const apiKey = 'AIzaSyDQVz9Q1OxF12kjtW04UNigTLd9YEd4Jy8';
+
+fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?key=${apiKey}&timeMin=${info.startStr}T00:00:00Z&timeMax=${info.endStr}T23:59:59Z&singleEvents=true&orderBy=startTime`)
+
             .then(response => response.json())
             .then(data => {
               const eventosDisponibles = data.items
