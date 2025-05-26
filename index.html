@@ -57,10 +57,10 @@
     button:hover {
       background-color: #023e8a;
     }
-    a#botonPago button {
+    #pagoWhatsappContainer a button {
       background-color: #38b000;
     }
-    a#botonPago button:hover {
+    #pagoWhatsappContainer a button:hover {
       background-color: #2d6a4f;
     }
     .checkbox-group {
@@ -144,113 +144,120 @@
     <label>Detalle del servicio:</label>
     <textarea name="detalle" rows="3" id="detalleServicio" placeholder="Ej. Colchón 2 plazas, 6 sillas"></textarea>
 
-    <div id="pagoSeña" style="margin-top: 20px;">
-  <a href="https://mpago.li/28yCxs6?back_url=https://virescalante.github.io/turnos-LAV/?pago=ok&redirect_mode=GET" target="_blank" id="botonPago">
-    <button type="button">Abonar Seña ($5.000)</button>
-  </a>
-</div>
-
-<button type="submit" id="botonWhatsapp" style="display: none;">Enviar datos por WhatsApp</button>
-
+    <div id="pagoWhatsappContainer" style="margin-top: 20px;">
+      <a href="https://mpago.li/28yCxs6?back_url=https://virescalante.github.io/turnos-LAV/?pago=ok&redirect_mode=GET" target="_blank" id="botonPago">
+        <button type="button">Abonar Seña ($5.000)</button>
+      </a>
+      <button type="submit" id="botonWhatsapp" style="display: none;">Enviar datos por WhatsApp</button>
+    </div>
+  </form>
 
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/google-calendar@6.1.8/index.global.min.js"></script>
   <script>
-  document.addEventListener('DOMContentLoaded', async function () {
-    const calendarEl = document.getElementById('calendar');
-    const form = document.getElementById('reservaForm');
-    const fechaInput = document.getElementById('fechaSeleccionada');
-    const pagoDiv = document.getElementById('pagoSeña');
-    const botonWhatsapp = document.getElementById('botonWhatsapp');
-    const otroCheckbox = document.getElementById('otroCheckbox');
-    const otroServicioContainer = document.getElementById('otroServicioContainer');
-    const otroServicioInput = document.getElementById('otroServicio');
+    document.addEventListener('DOMContentLoaded', async function () {
+      const calendarEl = document.getElementById('calendar');
+      const form = document.getElementById('reservaForm');
+      const fechaInput = document.getElementById('fechaSeleccionada');
+      const pagoWhatsappDiv = document.getElementById('pagoWhatsappContainer');
+      const botonWhatsapp = document.getElementById('botonWhatsapp');
+      const otroCheckbox = document.getElementById('otroCheckbox');
+      const otroServicioInput = document.getElementById('otroServicio');
+      const otroServicioContainer = document.getElementById('otroServicioContainer');
+      const botonPago = document.getElementById('botonPago');
 
-    if (new URLSearchParams(window.location.search).get("pago") === "ok") {
-      form.style.display = 'flex';
-      pagoDiv.style.display = 'none';
-      botonWhatsapp.style.display = 'block';
-    }
-
-    otroCheckbox.addEventListener('change', () => {
-      if (otroCheckbox.checked) {
-        otroServicioContainer.style.display = 'block';
-        document.getElementById('detalleServicio').required = true;
+      if (new URLSearchParams(window.location.search).get("pago") === "ok") {
+        form.style.display = 'flex';
+        botonPago.style.display = 'none';
+        botonWhatsapp.style.display = 'block';
+        window.scrollTo({ top: form.offsetTop, behavior: 'smooth' });
       } else {
-        otroServicioInput.value = '';
-        otroServicioContainer.style.display = 'none';
-        document.getElementById('detalleServicio').required = false;
+        botonPago.style.display = 'none';
       }
-    });
 
-    const today = new Date();
-    const minVisibleDate = new Date(today.getFullYear(), today.getMonth(), 21);
-    const maxVisibleDate = new Date(today.getFullYear(), today.getMonth() + 2, 1);
+      otroCheckbox.addEventListener('change', () => {
+        if (otroCheckbox.checked) {
+          otroServicioContainer.style.display = 'block';
+          document.getElementById('detalleServicio').required = true;
+        } else {
+          otroServicioInput.value = '';
+          otroServicioContainer.style.display = 'none';
+          document.getElementById('detalleServicio').required = false;
+        }
+      });
 
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: 'dayGridMonth',
-      locale: 'es',
-      selectable: true,
-      validRange: {
-        start: minVisibleDate,
-        end: maxVisibleDate
-      },
-      events: async function (fetchInfo, successCallback, failureCallback) {
-        try {
-          const timeMin = fetchInfo.startStr;
-          const timeMax = fetchInfo.endStr;
-          const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/84ead65e555e180b177d45c8dc49cc893cdb6e0d5806d770ec849fabb31585bb@group.calendar.google.com/events?key=AIzaSyDQVz9Q1OxF12kjtW04UNigTLd9YEd4Jy8&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`);
-          const data = await response.json();
-          const reservados = data.items.map(event => event.start.dateTime || event.start.date);
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'es',
+        height: 'auto',
+        validRange: function(nowDate) {
+          let minVisibleDate = new Date(nowDate.getFullYear(), nowDate.getMonth(), 21);
+          let maxVisibleDate = new Date(nowDate.getFullYear(), nowDate.getMonth() + 2, 1);
+          return {
+            start: minVisibleDate,
+            end: maxVisibleDate
+          };
+        },
+        events: async function(fetchInfo, successCallback, failureCallback) {
+          try {
+            const timeMin = fetchInfo.startStr;
+            const timeMax = fetchInfo.endStr;
+            const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/84ead65e555e180b177d45c8dc49cc893cdb6e0d5806d770ec849fabb31585bb@group.calendar.google.com/events?key=AIzaSyDQVz9Q1OxF12kjtW04UNigTLd9YEd4Jy8&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`);
+            const data = await response.json();
+            const reservados = data.items.map(event => ({
+              title: event.summary || 'Reservado',
+              start: event.start.dateTime || event.start.date,
+              end: event.end?.dateTime || event.end?.date,
+              color: '#d62828'
+            }));
 
-          const disponibles = [];
-          const startDate = new Date(fetchInfo.start);
-          const endDate = new Date(fetchInfo.end);
-          const horasDisponibles = ['08:00', '15:00'];
+            const disponibles = [];
+            const startDate = new Date(fetchInfo.start);
+            const endDate = new Date(fetchInfo.end);
+            const horasDisponibles = ['08:00', '15:00'];
 
-          for (let d = new Date(startDate); d < endDate; d.setDate(d.getDate() + 1)) {
-            if (d.getDay() === 0 || d.getDay() === 6) continue;
+            for (let d = new Date(startDate); d < endDate; d.setDate(d.getDate() + 1)) {
+              if (d.getDay() === 0 || d.getDay() === 6) continue;
 
-            const dateStr = d.toISOString().split('T')[0];
-            for (const hora of horasDisponibles) {
-              const fechaHora = `${dateStr}T${hora}:00`;
-              const yaReservado = reservados.some(ev => ev.startsWith(dateStr) && ev.includes(hora));
-              if (!yaReservado) {
-                disponibles.push({
-                  title: 'Disponible',
-                  start: fechaHora,
-                  allDay: false,
-                  color: '#4caf50'
-                });
+              const dateStr = d.toISOString().split('T')[0];
+              for (const hora of horasDisponibles) {
+                const fechaHora = `${dateStr}T${hora}:00`;
+                const yaReservado = reservados.some(ev => ev.start.startsWith(dateStr) && ev.start.includes(hora));
+                if (!yaReservado) {
+                  disponibles.push({
+                    title: 'Disponible',
+                    start: fechaHora,
+                    allDay: false,
+                    color: '#4caf50'
+                  });
+                }
               }
             }
+
+            successCallback([...reservados, ...disponibles]);
+          } catch (error) {
+            console.error('Error al cargar eventos', error);
+            failureCallback(error);
           }
-
-          successCallback(disponibles);
-        } catch (error) {
-          console.error('Error al cargar eventos', error);
-          failureCallback(error);
+        },
+        selectable: true,
+        select: function(info) {
+          const fecha = info.startStr;
+          fechaInput.value = fecha;
+          form.style.display = 'flex';
+          botonPago.style.display = 'inline-block';
+          window.scrollTo({ top: form.offsetTop, behavior: 'smooth' });
         }
-      },
-      select: function (info) {
-        if (info.start < minVisibleDate) return;
-        const fecha = info.startStr;
-        fechaInput.value = fecha;
-        form.style.display = 'flex';
-        window.scrollTo({ top: form.offsetTop, behavior: 'smooth' });
-      }
-    });
+      });
 
-    calendar.render();
+      calendar.render();
 
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
 
-      const datos = new FormData(form);
-      const serviciosSeleccionados = Array.from(form.querySelectorAll('input[name="servicios"]:checked')).map(cb => cb.value).join(', ');
+        const datos = new FormData(form);
+        const serviciosSeleccionados = Array.from(form.querySelectorAll('input[name="servicios"]:checked')).map(cb => cb.value).join(', ');
 
-      const mensaje = `Hola! Quiero reservar un turno el ${datos.get('fecha')}
+        const mensaje = `Hola! Quiero reservar un turno el ${datos.get('fecha')}
 Nombre: ${datos.get('nombre')}
 Teléfono: ${datos.get('telefono')}
 Dirección: ${datos.get('direccion')}
@@ -259,11 +266,10 @@ Servicios: ${serviciosSeleccionados}
 Otro servicio: ${datos.get('otroServicio') || 'N/A'}
 Detalle: ${datos.get('detalle') || 'N/A'}`;
 
-      const url = `https://wa.me/5492984655610?text=${encodeURIComponent(mensaje)}`;
-      window.open(url, '_blank');
+        const url = `https://wa.me/5492984655610?text=${encodeURIComponent(mensaje)}`;
+        window.open(url, '_blank');
+      });
     });
-  });
-</script>
-
+  </script>
 </body>
 </html>
