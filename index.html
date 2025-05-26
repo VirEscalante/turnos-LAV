@@ -172,10 +172,10 @@
       const urlParams = new URLSearchParams(window.location.search);
       const pagoOK = urlParams.get("pago") === "ok";
 
-      if (pagoOK) {
+      /*if (pagoOK) {
         form.style.display = 'flex';
         botonPago.style.display = 'none';
-        botonWhatsapp.style.display = 'block';
+        botonWhatsapp.style.display = 'block'; */
 
         const savedData = JSON.parse(localStorage.getItem("formData"));
         if (savedData) {
