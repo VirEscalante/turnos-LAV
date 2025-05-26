@@ -57,13 +57,10 @@
     button:hover {
       background-color: #023e8a;
     }
-    #botonPago {
-      margin-top: 20px;
-    }
-    #botonPago button {
+    a#botonPago button {
       background-color: #38b000;
     }
-    #botonPago button:hover {
+    a#botonPago button:hover {
       background-color: #2d6a4f;
     }
     .checkbox-group {
@@ -147,52 +144,34 @@
     <label>Detalle del servicio:</label>
     <textarea name="detalle" rows="3" id="detalleServicio" placeholder="Ej. Colchón 2 plazas, 6 sillas"></textarea>
 
-    <div id="botonPago">
-      <button type="button">Abonar Seña ($5.000)</button>
+    <div id="pagoSeña" style="margin-top: 20px;">
+      <a href="https://mpago.li/28yCxs6?back_url=https://virescalante.github.io/turnos-LAV/?pago=ok" target="_blank" id="botonPago">
+        <button type="button">Abonar Seña ($5.000)</button>
+      </a>
     </div>
 
-    <button type="submit" id="botonWhatsapp">Enviar datos por WhatsApp</button>
+    <button type="submit" id="botonWhatsapp" style="display: none;">Enviar datos por WhatsApp</button>
   </form>
 
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/google-calendar@6.1.8/index.global.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const calendarEl = document.getElementById('calendar');
       const form = document.getElementById('reservaForm');
       const fechaInput = document.getElementById('fechaSeleccionada');
-      const botonPago = document.querySelector('#botonPago button');
+      const pagoDiv = document.getElementById('pagoSeña');
+      const botonPago = document.getElementById('botonPago');
+      const botonWhatsapp = document.getElementById('botonWhatsapp');
       const otroCheckbox = document.getElementById('otroCheckbox');
       const otroServicioInput = document.getElementById('otroServicio');
       const otroServicioContainer = document.getElementById('otroServicioContainer');
-      const botonWhatsapp = document.getElementById('botonWhatsapp');
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const pagoOK = urlParams.get('pago') === 'ok';
-
-      if (pagoOK) {
-        const datosGuardados = JSON.parse(localStorage.getItem('datosReserva'));
-        if (datosGuardados) {
-          form.style.display = 'flex';
-          botonPago.style.display = 'none';
-          window.scrollTo({ top: form.offsetTop, behavior: 'smooth' });
-
-          fechaInput.value = datosGuardados.fecha || '';
-          form.querySelector('input[name="nombre"]').value = datosGuardados.nombre || '';
-          form.querySelector('input[name="telefono"]').value = datosGuardados.telefono || '';
-          form.querySelector('input[name="direccion"]').value = datosGuardados.direccion || '';
-          form.querySelector('select[name="ciudad"]').value = datosGuardados.ciudad || '';
-          form.querySelector('textarea[name="detalle"]').value = datosGuardados.detalle || '';
-
-          const checkboxes = form.querySelectorAll('input[name="servicios"]');
-          checkboxes.forEach(cb => {
-            cb.checked = datosGuardados.servicios.includes(cb.value);
-          });
-
-          if (datosGuardados.servicios.includes('Otro')) {
-            otroServicioContainer.style.display = 'block';
-            otroServicioInput.value = datosGuardados.otroServicio || '';
-          }
-        }
+      if (new URLSearchParams(window.location.search).get("pago") === "ok") {
+        form.style.display = 'flex';
+        pagoDiv.style.display = 'none';
+        botonWhatsapp.style.display = 'block';
       }
 
       otroCheckbox.addEventListener('change', () => {
@@ -212,7 +191,10 @@
         selectable: true,
         validRange: function(nowDate) {
           let endDate = new Date(nowDate.getFullYear(), nowDate.getMonth() + 2, 0);
-          return { start: nowDate, end: endDate };
+          return {
+            start: nowDate,
+            end: endDate
+          };
         },
         events: {
           googleCalendarApiKey: 'AIzaSyDQVz9Q1OxF12kjtW04UNigTLd9YEd4Jy8',
@@ -228,34 +210,23 @@
 
       calendar.render();
 
-      botonPago.addEventListener('click', () => {
-        const datos = new FormData(form);
-        const serviciosSeleccionados = Array.from(form.querySelectorAll('input[name="servicios"]:checked')).map(cb => cb.value);
-        const datosFormulario = {
-          fecha: datos.get('fecha'),
-          nombre: datos.get('nombre'),
-          telefono: datos.get('telefono'),
-          direccion: datos.get('direccion'),
-          ciudad: datos.get('ciudad'),
-          servicios: serviciosSeleccionados,
-          otroServicio: datos.get('otroServicio'),
-          detalle: datos.get('detalle')
-        };
-        localStorage.setItem('datosReserva', JSON.stringify(datosFormulario));
-        window.location.href = 'https://mpago.li/28yCxs6?back_url=https://virescalante.github.io/turnos-LAV/?pago=ok&auto_return=approved';
-      });
-
       form.addEventListener('submit', function (e) {
         e.preventDefault();
+
         const datos = new FormData(form);
         const serviciosSeleccionados = Array.from(form.querySelectorAll('input[name="servicios"]:checked')).map(cb => cb.value).join(', ');
 
-        const mensaje = `Hola! Quiero reservar un turno el ${datos.get('fecha')}\nNombre: ${datos.get('nombre')}\nTeléfono: ${datos.get('telefono')}\nDirección: ${datos.get('direccion')}\nCiudad: ${datos.get('ciudad')}\nServicios: ${serviciosSeleccionados}\nOtro servicio: ${datos.get('otroServicio') || 'N/A'}\nDetalle: ${datos.get('detalle') || 'N/A'}`;
+        const mensaje = `Hola! Quiero reservar un turno el ${datos.get('fecha')}
+Nombre: ${datos.get('nombre')}
+Teléfono: ${datos.get('telefono')}
+Dirección: ${datos.get('direccion')}
+Ciudad: ${datos.get('ciudad')}
+Servicios: ${serviciosSeleccionados}
+Otro servicio: ${datos.get('otroServicio') || 'N/A'}
+Detalle: ${datos.get('detalle') || 'N/A'}`;
 
         const url = `https://wa.me/5492984655610?text=${encodeURIComponent(mensaje)}`;
         window.open(url, '_blank');
-
-        localStorage.removeItem('datosReserva');
       });
     });
   </script>
