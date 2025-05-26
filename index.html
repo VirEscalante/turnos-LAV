@@ -185,30 +185,63 @@
         }
       });
 
-      const calendar = new FullCalendar.Calendar(calendarEl, {
+   const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         locale: 'es',
-        selectable: true,
-        validRange: function(nowDate) {
-          let endDate = new Date(nowDate.getFullYear(), nowDate.getMonth() + 2, 0);
-          return {
-            start: nowDate,
-            end: endDate
-          };
+        height: 'auto',
+        validRange: {
+          start: minVisibleDate,
+          end: maxVisibleDate
         },
-        events: {
-          googleCalendarApiKey: 'AIzaSyDQVz9Q1OxF12kjtW04UNigTLd9YEd4Jy8',
-          googleCalendarId: '84ead65e555e180b177d45c8dc49cc893cdb6e0d5806d770ec849fabb31585bb@group.calendar.google.com'
+        dayCellDidMount: function(info) {
+          const date = info.date;
+          if (date < minVisibleDate || date >= maxVisibleDate) {
+            info.el.style.backgroundColor = '#e0e0e0';
+            info.el.style.color = '#a0a0a0';
+            info.el.style.pointerEvents = 'none';
+          }
         },
-        select: function(info) {
-          const fecha = info.startStr;
-          fechaInput.value = fecha;
-          form.style.display = 'flex';
-          window.scrollTo({ top: form.offsetTop, behavior: 'smooth' });
-        }
-      });
+        events: async function(fetchInfo, successCallback, failureCallback) {
+          try {
+            const timeMin = fetchInfo.startStr;
+            const timeMax = fetchInfo.endStr;
+            const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/84ead65e555e180b177d45c8dc49cc893cdb6e0d5806d770ec849fabb31585bb@group.calendar.google.com/events?key=AIzaSyDQVz9Q1OxF12kjtW04UNigTLd9YEd4Jy8&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`);
+            const data = await response.json();
+            const reservados = data.items.map(event => ({
+              title: event.summary || 'Reservado',
+              start: event.start.dateTime || event.start.date,
+              end: event.end?.dateTime || event.end?.date,
+              color: '#d62828'
+            }));
 
-      calendar.render();
+            const disponibles = [];
+            const startDate = new Date(fetchInfo.start);
+            const endDate = new Date(fetchInfo.end);
+            const horasDisponibles = ['08:00', '15:00'];
+
+            for (let d = new Date(startDate); d < endDate; d.setDate(d.getDate() + 1)) {
+              if (d.getDay() === 0 || d.getDay() === 6) continue;
+
+              const dateStr = d.toISOString().split('T')[0];
+              for (const hora of horasDisponibles) {
+                const fechaHora = `${dateStr}T${hora}:00`;
+                const yaReservado = reservados.some(ev => ev.start.startsWith(dateStr) && ev.start.includes(hora));
+                if (!yaReservado) {
+                  disponibles.push({
+                    title: 'Disponible',
+                    start: fechaHora,
+                    allDay: false,
+                    color: '#4caf50'
+                  });
+                }
+              }
+            }}
+
+            successCallback([...reservados, ...disponibles]);
+          } catch (error) {
+            console.error('Error al cargar eventos', error);
+            failureCallback(error);
+          }
 
       form.addEventListener('submit', function (e) {
         e.preventDefault();
