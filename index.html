@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Turnos - Limpieza Alto Valle</title>
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet"/>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -41,10 +41,6 @@
       border-radius: 5px;
       border: 1px solid #ccc;
     }
-    textarea::placeholder {
-      color: #999;
-      font-style: italic;
-    }
     button {
       margin-top: 20px;
       padding: 10px;
@@ -57,10 +53,10 @@
     button:hover {
       background-color: #023e8a;
     }
-    a#botonPago button {
+    .btn-verde {
       background-color: #38b000;
     }
-    a#botonPago button:hover {
+    .btn-verde:hover {
       background-color: #2d6a4f;
     }
     .checkbox-group {
@@ -122,7 +118,7 @@
       <option>Villa Regina</option>
     </select>
 
-    <label>Servicios a realizar (puede seleccionar más de uno):</label>
+    <label>Servicios a realizar:</label>
     <div class="checkbox-group">
       <label class="checkbox-item"><input type="checkbox" name="servicios" value="Silla"> Silla</label>
       <label class="checkbox-item"><input type="checkbox" name="servicios" value="Sillón"> Sillón</label>
@@ -144,15 +140,9 @@
     <label>Detalle del servicio:</label>
     <textarea name="detalle" rows="3" id="detalleServicio" placeholder="Ej. Colchón 2 plazas, 6 sillas"></textarea>
 
-    <button type="submit">Enviar datos por WhatsApp</button>
+    <button type="button" class="btn-verde" id="pagarBtn">Abonar seña $5.000</button>
+    <button type="submit" id="enviarBtn">Enviar datos por WhatsApp</button>
   </form>
-
-  <div id="pagoSeña" style="display:none; text-align:center; margin-top:20px;">
-    <p><strong>Para confirmar tu turno, deberás abonar una seña de $20.000.</strong></p>
-    <a href="https://mpago.la/2q3XtY9" target="_blank" id="botonPago">
-      <button type="button">Pagar Seña ($20.000)</button>
-    </a>
-  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
   <script>
@@ -160,20 +150,40 @@
       const calendarEl = document.getElementById('calendar');
       const form = document.getElementById('reservaForm');
       const fechaInput = document.getElementById('fechaSeleccionada');
-      const pagoDiv = document.getElementById('pagoSeña');
       const otroCheckbox = document.getElementById('otroCheckbox');
-      const otroServicioInput = document.getElementById('otroServicio');
       const otroServicioContainer = document.getElementById('otroServicioContainer');
+      const pagarBtn = document.getElementById('pagarBtn');
+      const enviarBtn = document.getElementById('enviarBtn');
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const pagoRealizado = urlParams.get('pago') === 'ok';
+
+      const savedData = JSON.parse(localStorage.getItem('formData') || '{}');
+
+      if (pagoRealizado) {
+        form.style.display = 'flex';
+        pagarBtn.style.display = 'none';
+        // Rellenar datos del formulario si existen
+        for (const key in savedData) {
+          const field = form.elements[key];
+          if (field) {
+            field.value = savedData[key];
+          }
+        }
+        if (savedData.servicios) {
+          const servicios = savedData.servicios.split(',');
+          servicios.forEach(serv => {
+            const checkbox = form.querySelector(`input[name="servicios"][value="${serv.trim()}"]`);
+            if (checkbox) checkbox.checked = true;
+          });
+        }
+        if (savedData.otroServicio) {
+          document.getElementById('otroServicioContainer').style.display = 'block';
+        }
+      }
 
       otroCheckbox.addEventListener('change', () => {
-        if (otroCheckbox.checked) {
-          otroServicioContainer.style.display = 'block';
-          document.getElementById('detalleServicio').required = true;
-        } else {
-          otroServicioInput.value = '';
-          otroServicioContainer.style.display = 'none';
-          document.getElementById('detalleServicio').required = false;
-        }
+        otroServicioContainer.style.display = otroCheckbox.checked ? 'block' : 'none';
       });
 
       const calendar = new FullCalendar.Calendar(calendarEl, {
@@ -182,24 +192,34 @@
         selectable: true,
         validRange: function(nowDate) {
           let endDate = new Date(nowDate.getFullYear(), nowDate.getMonth() + 2, 0);
-          return {
-            start: nowDate,
-            end: endDate
-          };
+          return { start: nowDate, end: endDate };
         },
         events: {
           googleCalendarApiKey: 'AIzaSyDQVz9Q1OxF12kjtW04UNigTLd9YEd4Jy8',
           googleCalendarId: '84ead65e555e180b177d45c8dc49cc893cdb6e0d5806d770ec849fabb31585bb@group.calendar.google.com'
         },
         select: function(info) {
-          const fecha = info.startStr;
-          fechaInput.value = fecha;
+          fechaInput.value = info.startStr;
           form.style.display = 'flex';
           window.scrollTo({ top: form.offsetTop, behavior: 'smooth' });
         }
       });
 
       calendar.render();
+
+      pagarBtn.addEventListener('click', () => {
+        const formData = new FormData(form);
+        const plainData = {};
+        formData.forEach((value, key) => {
+          plainData[key] = value;
+        });
+
+        const serviciosSeleccionados = Array.from(form.querySelectorAll('input[name="servicios"]:checked')).map(cb => cb.value).join(', ');
+        plainData.servicios = serviciosSeleccionados;
+
+        localStorage.setItem('formData', JSON.stringify(plainData));
+        window.location.href = 'https://mpago.la/14HjeyM'; // LINK DE MERCADO PAGO
+      });
 
       form.addEventListener('submit', function (e) {
         e.preventDefault();
@@ -208,28 +228,17 @@
         const serviciosSeleccionados = Array.from(form.querySelectorAll('input[name="servicios"]:checked')).map(cb => cb.value).join(', ');
 
         const mensaje = `Hola! Quiero reservar un turno el ${datos.get('fecha')}
-` +
-                        `Nombre: ${datos.get('nombre')}
-` +
-                        `Teléfono: ${datos.get('telefono')}
-` +
-                        `Dirección: ${datos.get('direccion')}
-` +
-                        `Ciudad: ${datos.get('ciudad')}
-` +
-                        `Servicios: ${serviciosSeleccionados}
-` +
-                        `Otro servicio: ${datos.get('otroServicio') || 'N/A'}
-` +
-                        `Detalle: ${datos.get('detalle') || 'N/A'}`;
+Nombre: ${datos.get('nombre')}
+Teléfono: ${datos.get('telefono')}
+Dirección: ${datos.get('direccion')}
+Ciudad: ${datos.get('ciudad')}
+Servicios: ${serviciosSeleccionados}
+Otro servicio: ${datos.get('otroServicio') || 'N/A'}
+Detalle: ${datos.get('detalle') || 'N/A'}`;
 
         const url = `https://wa.me/5492984655610?text=${encodeURIComponent(mensaje)}`;
         window.open(url, '_blank');
-
-        setTimeout(() => {  
-          pagoDiv.style.display = 'block';
-          window.scrollTo({ top: pagoDiv.offsetTop, behavior: 'smooth' });
-        }, 1000);
+        localStorage.removeItem('formData');
       });
     });
   </script>
